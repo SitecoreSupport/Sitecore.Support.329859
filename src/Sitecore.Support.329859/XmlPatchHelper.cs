@@ -1,23 +1,25 @@
 ﻿using Sitecore.Diagnostics;
-using Sitecore.Xml.Patch;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Security;
 using System.Text;
-using System.Threading.Tasks;
 using System.Xml;
+using Sitecore.Xml.Patch;
+using System.Text.RegularExpressions;
 
-namespace Sitecore.Xml.Patch
+namespace Sitecore.Support.Xml.Patch
 {
     public class XmlPatchHelper
     {
-        // Fields
         public const string PatchPrefix = "patch";
         protected IElementIdentification elementIdentification = new ElementIdentification();
+        private string refToPlaceholder = string.Empty;
 
-        // Methods
-        public virtual void AssignAttributes(XmlNode target, IEnumerable<IXmlNode> attributes)
+
+
+        public virtual void AssignAttributes(System.Xml.XmlNode target, IEnumerable<IXmlNode> attributes)
         {
             Assert.ArgumentNotNull(target, "target");
             Assert.ArgumentNotNull(attributes, "attributes");
@@ -26,7 +28,7 @@ namespace Sitecore.Xml.Patch
                 Assert.IsNotNull(target.Attributes, "attributes");
                 if (node.LocalName != "xmlns")
                 {
-                    XmlAttribute attribute = target.Attributes[node.LocalName, node.NamespaceURI];
+                    System.Xml.XmlAttribute attribute = target.Attributes[node.LocalName, node.NamespaceURI];
                     if (attribute == null)
                     {
                         if (this.IsPatchingAttributeName(node.LocalName) && (target.Attributes[node.LocalName] != null))
@@ -45,7 +47,7 @@ namespace Sitecore.Xml.Patch
             }
         }
 
-        protected virtual void AssignSource(XmlNode target, object source, XmlPatchNamespaces ns)
+        protected virtual void AssignSource(System.Xml.XmlNode target, object source, XmlPatchNamespaces ns)
         {
             Assert.ArgumentNotNull(target, "target");
             Assert.ArgumentNotNull(source, "source");
@@ -61,15 +63,15 @@ namespace Sitecore.Xml.Patch
                     if (string.IsNullOrEmpty(prefixOfNamespace))
                     {
                         prefixOfNamespace = "patch";
-                        XmlNode documentElement = target.OwnerDocument.DocumentElement;
-                        XmlAttribute node = target.OwnerDocument.CreateAttribute("xmlns:" + prefixOfNamespace);
+                        System.Xml.XmlNode documentElement = target.OwnerDocument.DocumentElement;
+                        System.Xml.XmlAttribute node = target.OwnerDocument.CreateAttribute("xmlns:" + prefixOfNamespace);
                         node.Value = ns.PatchNamespace;
                         Assert.IsNotNull(documentElement, "rootElement");
                         Assert.IsNotNull(documentElement.Attributes, "rootElement.Attributes");
                         documentElement.Attributes.Append(node);
                     }
                     Assert.IsNotNull(target.Attributes, "target.Attributes");
-                    XmlAttribute attribute = target.Attributes["source", ns.PatchNamespace];
+                    System.Xml.XmlAttribute attribute = target.Attributes["source", ns.PatchNamespace];
                     if (attribute == null)
                     {
                         attribute = target.OwnerDocument.CreateAttribute(prefixOfNamespace, "source", ns.PatchNamespace);
@@ -128,7 +130,7 @@ namespace Sitecore.Xml.Patch
             return builder;
         }
 
-        protected virtual float CalculateRelevancy(XmlNode node, IXmlElement patch, int level, XmlPatchNamespaces ns)
+        protected virtual float CalculateRelevancy(System.Xml.XmlNode node, IXmlElement patch, int level, XmlPatchNamespaces ns)
         {
             float num = 0f;
             if (level <= 30)
@@ -143,7 +145,7 @@ namespace Sitecore.Xml.Patch
                     {
                         List<IXmlNode> queryAttributes = this.InitializeQueryAttributes(element, ns);
                         XmlNamespaceManager nsManager = this.BuildNamespaceForNode(element);
-                        XmlNode node2 = this.FindBestTargetChild(node, element, this.BuildPredicateForNodeAttributes(queryAttributes, nsManager), ns, nsManager);
+                        System.Xml.XmlNode node2 = this.FindBestTargetChild(node, element, this.BuildPredicateForNodeAttributes(queryAttributes, nsManager), ns, nsManager);
                         if (node2 == null)
                         {
                             num--;
@@ -162,7 +164,7 @@ namespace Sitecore.Xml.Patch
             return (source.Any<IXmlElement>() && source.All<IXmlElement>(x => (x.NamespaceURI == ns.PatchNamespace)));
         }
 
-        public virtual void CopyAttributes(XmlNode target, IXmlElement patch, XmlPatchNamespaces ns)
+        public virtual void CopyAttributes(System.Xml.XmlNode target, IXmlElement patch, XmlPatchNamespaces ns)
         {
             Assert.ArgumentNotNull(target, "target");
             Assert.ArgumentNotNull(patch, "patch");
@@ -206,9 +208,9 @@ namespace Sitecore.Xml.Patch
             return operation;
         }
 
-        protected virtual XmlNode FindBestTargetChild(XmlNode target, IXmlElement patchNode, StringBuilder predicateBuilder, XmlPatchNamespaces ns, XmlNamespaceManager nsManager)
+        protected virtual System.Xml.XmlNode FindBestTargetChild(System.Xml.XmlNode target, IXmlElement patchNode, StringBuilder predicateBuilder, XmlPatchNamespaces ns, XmlNamespaceManager nsManager)
         {
-            XmlNode node;
+            System.Xml.XmlNode node;
             string xpath = this.MakeName(patchNode.Prefix, patchNode.LocalName);
             if (string.IsNullOrEmpty(patchNode.Prefix) && (nsManager.LookupNamespace("nodens") == patchNode.NamespaceURI))
             {
@@ -325,7 +327,7 @@ namespace Sitecore.Xml.Patch
             return list;
         }
 
-        protected virtual bool InsertChild(XmlNode parent, XmlNode child, InsertOperation operation)
+        protected virtual bool InsertChild(System.Xml.XmlNode parent, System.Xml.XmlNode child, InsertOperation operation)
         {
             Assert.ArgumentNotNull(parent, "parent");
             Assert.ArgumentNotNull(child, "child");
@@ -334,10 +336,14 @@ namespace Sitecore.Xml.Patch
                 parent.AppendChild(child);
                 return true;
             }
-            XmlNode refChild = parent.SelectSingleNode(operation.Reference);
+            System.Xml.XmlNode refChild = parent.SelectSingleNode(operation.Reference);
             if (refChild == null)
             {
                 parent.AppendChild(child);
+                if (String.Compare(operation.Reference, this.refToPlaceholder) == 0)
+                {
+                    return true;
+                }
                 return false;
             }
             char disposition = operation.Disposition;
@@ -367,7 +373,7 @@ namespace Sitecore.Xml.Patch
             return true;
         }
 
-        protected virtual XmlNode InsertNode(XmlNode target, IXmlElement node, InsertOperation operation, Stack<InsertOperation> pendingOperations)
+        protected virtual System.Xml.XmlNode InsertNode(System.Xml.XmlNode target, IXmlElement node, InsertOperation operation, Stack<InsertOperation> pendingOperations)
         {
             Assert.IsNotNull(target.OwnerDocument, "document");
             XmlElement child = target.OwnerDocument.CreateElement(this.MakeName(node.Prefix, node.LocalName), node.NamespaceURI);
@@ -400,12 +406,128 @@ namespace Sitecore.Xml.Patch
             return (string.IsNullOrEmpty(prefix) ? localName : (prefix + ":" + localName));
         }
 
-        protected virtual void MergeChildren(XmlNode target, IXmlElement patch, XmlPatchNamespaces ns, bool targetWasInserted)
+
+        protected virtual void MergeChildren(System.Xml.XmlNode target, IXmlElement patch, XmlPatchNamespaces ns, bool targetWasInserted)
         {
-            // Invalid method body.
+            Assert.ArgumentNotNull(target, "target");
+            Assert.ArgumentNotNull(patch, "patch");
+            Assert.ArgumentNotNull(ns, "ns");
+            string text = null;
+
+
+
+            Stack<XmlPatchHelper.InsertOperation> stack = new Stack<XmlPatchHelper.InsertOperation>();
+            using (IEnumerator<IXmlElement> enumerator = patch.GetChildren().GetEnumerator())
+            {
+                while (enumerator.MoveNext())
+                {
+                    IXmlElement current = enumerator.Current;
+                    IEnumerable<IXmlNode> nodeSet = current.GetAttributes();
+                    string nodeValuePattern = "p[\\d\\D]";
+                    foreach (var item in nodeSet)
+                    {
+                        Match match = Regex.Match(item.Value, nodeValuePattern, RegexOptions.IgnoreCase);
+                        if (match.Success)
+                        {
+                            refToPlaceholder = item.Value;
+                        }
+                    }
+
+                    if (current.NodeType == XmlNodeType.Text)
+                    {
+                        if (string.Compare(current.Value, "#text !#&== to be deleted==&#!", StringComparison.InvariantCultureIgnoreCase) == 0)
+                        {
+                            target.InnerText = string.Empty;
+                        }
+                        else
+                        {
+                            target.InnerText = current.Value;
+                        }
+                    }
+                    else if (current.NodeType == XmlNodeType.Comment)
+                    {
+                        if (string.Compare(current.Value, "#text !#&== to be deleted==&#!", StringComparison.InvariantCultureIgnoreCase) == 0)
+                        {
+                            text = string.Empty;
+                        }
+                        else
+                        {
+                            text = current.Value;
+                        }
+                    }
+                    else if (this.ShouldProcessPatchNode(current))
+                    {
+                        if (current.NamespaceURI == ns.PatchNamespace)
+                        {
+                            this.ProcessConfigNode(target, current, ns);
+                        }
+                        else
+                        {
+                            List<IXmlNode> list = this.InitializeQueryAttributes(current, ns);
+                            List<IXmlNode> list2 = this.InitializeSetAttributes(current, ns, list);
+                            XmlPatchHelper.InsertOperation insertOperation = this.DetermineInsertOperation(current, ns);
+                            XmlNamespaceManager nsManager = this.BuildNamespaceForNode(current);
+                            StringBuilder predicateBuilder = this.BuildPredicateForNodeAttributes(list, nsManager);
+                            XmlNode xmlNode = null;
+                            bool flag = false;
+                            if (!targetWasInserted || this.ContainsPatchNodesOnly(current, ns))
+                            {
+                                xmlNode = this.FindBestTargetChild(target, current, predicateBuilder, ns, nsManager);
+                                targetWasInserted = false;
+                            }
+                            if (xmlNode == null)
+                            {
+                                xmlNode = this.InsertNode(target, current, insertOperation, stack);
+                                flag = true;
+                                this.AssignAttributes(xmlNode, list);
+                            }
+                            else if (insertOperation != null)
+                            {
+                                bool flag2 = current is XmlDomSource;
+                                bool flag3 = !this.elementIdentification.HasUniqueIdentificationAttributes(current);
+                                if ((flag2 & flag3) && this.ShouldInsertNode(xmlNode, (current as XmlDomSource).Node))
+                                {
+                                    xmlNode = this.InsertNode(target, current, insertOperation, stack);
+                                    flag = true;
+                                    this.AssignAttributes(xmlNode, list);
+                                }
+                                else if (!this.InsertChild(target, xmlNode, insertOperation))
+                                {
+                                    insertOperation.Node = xmlNode;
+                                    stack.Push(insertOperation);
+                                }
+                            }
+                            if (text != null)
+                            {
+                                Assert.IsNotNull(xmlNode.OwnerDocument, "document");
+                                XmlComment newChild = xmlNode.OwnerDocument.CreateComment(text);
+                                Assert.IsNotNull(xmlNode.ParentNode, "parent");
+                                xmlNode.ParentNode.InsertBefore(newChild, xmlNode);
+                                text = null;
+                            }
+                            this.AssignAttributes(xmlNode, list2);
+                            this.MergeChildren(xmlNode, current, ns, flag);
+                            if ((flag || list2.Any<IXmlNode>()) && !targetWasInserted)
+                            {
+                                this.AssignSource(xmlNode, current, ns);
+                            }
+                        }
+                    }
+                }
+                if (stack.Count <= 0)
+                {
+                    return;
+                }
+            }
+            while (stack.Count != 0)
+            {
+                XmlPatchHelper.InsertOperation insertOperation2 = stack.Pop();
+                Assert.IsNotNull(insertOperation2.Node.ParentNode, "parent");
+                this.InsertChild(insertOperation2.Node.ParentNode, insertOperation2.Node, insertOperation2);
+            }
         }
 
-        public virtual void MergeNodes(XmlNode target, IXmlElement patch, XmlPatchNamespaces ns)
+        public virtual void MergeNodes(System.Xml.XmlNode target, IXmlElement patch, XmlPatchNamespaces ns)
         {
             Assert.ArgumentNotNull(target, "target");
             Assert.ArgumentNotNull(patch, "patch");
@@ -417,7 +539,7 @@ namespace Sitecore.Xml.Patch
             }
         }
 
-        protected virtual void ProcessConfigNode(XmlNode target, IXmlElement command, XmlPatchNamespaces patchNamespace)
+        protected virtual void ProcessConfigNode(System.Xml.XmlNode target, IXmlElement command, XmlPatchNamespaces patchNamespace)
         {
             Assert.ArgumentNotNull(target, "target");
             Assert.ArgumentNotNull(command, "command");
@@ -441,7 +563,7 @@ namespace Sitecore.Xml.Patch
             else
             {
                 string str2;
-                XmlAttribute attribute = null;
+                System.Xml.XmlAttribute attribute = null;
                 string str3;
                 dictionary.TryGetValue("ns", out str2);
                 Assert.IsNotNull(target.Attributes, "attributes");
@@ -464,14 +586,14 @@ namespace Sitecore.Xml.Patch
             }
         }
 
-        protected virtual bool ShouldInsertNode(XmlNode target, XmlNode patch)
+        protected virtual bool ShouldInsertNode(System.Xml.XmlNode target, System.Xml.XmlNode patch)
         {
             if (target.ChildNodes.Count == patch.ChildNodes.Count)
             {
                 for (int i = 0; i < target.ChildNodes.Count; i++)
                 {
-                    XmlNode node = target.ChildNodes[i];
-                    XmlNode node2 = patch.ChildNodes[i];
+                    System.Xml.XmlNode node = target.ChildNodes[i];
+                    System.Xml.XmlNode node2 = patch.ChildNodes[i];
                     if (node.HasChildNodes || node2.HasChildNodes)
                     {
                         if (this.ShouldInsertNode(node, node2))
@@ -488,7 +610,7 @@ namespace Sitecore.Xml.Patch
             return false;
         }
 
-        protected virtual bool ShouldPatchNode(XmlNode target, IXmlElement patch, XmlPatchNamespaces ns)
+        protected virtual bool ShouldPatchNode(System.Xml.XmlNode target, IXmlElement patch, XmlPatchNamespaces ns)
         {
             Assert.ArgumentNotNull(target, "target");
             Assert.ArgumentNotNull(patch, "patch");
@@ -503,12 +625,11 @@ namespace Sitecore.Xml.Patch
         {
             public char Disposition { get; set; }
 
-            public XmlNode Node { get; set; }
+            public System.Xml.XmlNode Node { get; set; }
 
             public string Reference { get; set; }
 
             public bool Succeeded { get; set; }
         }
     }
-
 }
