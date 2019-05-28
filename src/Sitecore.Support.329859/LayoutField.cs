@@ -1,5 +1,4 @@
-﻿using Sitecore;
-using Sitecore.Data;
+﻿using Sitecore.Data;
 using Sitecore.Data.Fields;
 using Sitecore.Data.Items;
 using Sitecore.Diagnostics;
@@ -16,12 +15,10 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Linq;
 
-namespace Sitecore.Data.Fields
+namespace Sitecore.Support.Data.Fields
 {
     public class LayoutField : CustomField
     {
@@ -34,7 +31,7 @@ namespace Sitecore.Data.Fields
             this.data = this.LoadData();
         }
 
-        public LayoutField(Item item) : this(item.Fields[FieldIDs.FinalLayoutField])
+        public LayoutField(Sitecore.Data.Items.Item item) : this(item.Fields[FieldIDs.FinalLayoutField])
         {
         }
 
@@ -45,11 +42,11 @@ namespace Sitecore.Data.Fields
             this.data = this.LoadData();
         }
 
-        public LayoutField(Item item, string runtimeValue) : this(item.Fields[FieldIDs.FinalLayoutField], runtimeValue)
+        public LayoutField(Sitecore.Data.Items.Item item, string runtimeValue) : this(item.Fields[FieldIDs.FinalLayoutField], runtimeValue)
         {
         }
 
-        public static ID ExtractLayoutID(XmlNode deviceNode)
+        public static ID ExtractLayoutID(System.Xml.XmlNode deviceNode)
         {
             Assert.ArgumentNotNull(deviceNode, "deviceNode");
             string attribute = XmlUtil.GetAttribute("l", deviceNode);
@@ -60,7 +57,7 @@ namespace Sitecore.Data.Fields
             return ID.Parse(attribute);
         }
 
-        public static RenderingReference[] ExtractReferences(XmlNode deviceNode, Language language, Database database)
+        public static RenderingReference[] ExtractReferences(System.Xml.XmlNode deviceNode, Language language, Database database)
         {
             Assert.ArgumentNotNull(deviceNode, "deviceNode");
             Assert.ArgumentNotNull(language, "language");
@@ -75,7 +72,7 @@ namespace Sitecore.Data.Fields
             return referenceArray;
         }
 
-        public XmlNode GetDeviceNode(DeviceItem device) =>
+        public System.Xml.XmlNode GetDeviceNode(DeviceItem device) =>
             ((device == null) ? null : this.Data.DocumentElement.SelectSingleNode("d[@id='" + device.ID + "']"));
 
         public static string GetFieldValue(Field field)
@@ -118,17 +115,17 @@ namespace Sitecore.Data.Fields
                     source.Push(str2);
                 }
             }
-            return (!string.IsNullOrWhiteSpace(str) ? source.Aggregate<string, string>(str, new Func<string, string, string>(XmlDeltas.ApplyDelta)) : string.Empty);
+            return (!string.IsNullOrWhiteSpace(str) ? source.Aggregate<string, string>(str, new Func<string, string, string>(Sitecore.Support.Data.Fields.XmlDeltas.ApplyDelta)) : string.Empty);
         }
 
         public ID GetLayoutID(DeviceItem device)
         {
             Assert.ArgumentNotNull(device, "device");
-            XmlNode deviceNode = this.GetDeviceNode(device);
+            System.Xml.XmlNode deviceNode = this.GetDeviceNode(device);
             return ((deviceNode == null) ? ID.Null : ExtractLayoutID(deviceNode));
         }
 
-        private RenderingParametersFieldCollection GetParametersFields(Item layoutItem, string renderingParameters)
+        private RenderingParametersFieldCollection GetParametersFields(Sitecore.Data.Items.Item layoutItem, string renderingParameters)
         {
             RenderingParametersFieldCollection fields;
             UrlString parameters = new UrlString(renderingParameters);
@@ -139,7 +136,7 @@ namespace Sitecore.Data.Fields
         public RenderingReference[] GetReferences(DeviceItem device)
         {
             Assert.ArgumentNotNull(device, "device");
-            XmlNode deviceNode = this.GetDeviceNode(device);
+            System.Xml.XmlNode deviceNode = this.GetDeviceNode(device);
             return ((deviceNode == null) ? null : ExtractReferences(deviceNode, base.InnerField.Language, base.InnerField.Database));
         }
 
@@ -155,7 +152,7 @@ namespace Sitecore.Data.Fields
         public static implicit operator LayoutField(Field field) =>
             ((field == null) ? null : new LayoutField(field));
 
-        public override void Relink(ItemLink itemLink, Item newLink)
+        public override void Relink(ItemLink itemLink, Sitecore.Data.Items.Item newLink)
         {
             DeviceDefinition definition2;
             int num3;
@@ -205,7 +202,7 @@ namespace Sitecore.Data.Fields
                     }
                     if (!string.IsNullOrEmpty(definition4.Parameters))
                     {
-                        Item layoutItem = base.InnerField.Database.GetItem(definition4.ItemID);
+                        Sitecore.Data.Items.Item layoutItem = base.InnerField.Database.GetItem(definition4.ItemID);
                         if (layoutItem == null)
                         {
                             goto TR_0006;
@@ -348,7 +345,7 @@ namespace Sitecore.Data.Fields
                     }
                     if (!string.IsNullOrEmpty(definition4.Parameters))
                     {
-                        Item layoutItem = base.InnerField.Database.GetItem(definition4.ItemID);
+                        Sitecore.Data.Items.Item layoutItem = base.InnerField.Database.GetItem(definition4.ItemID);
                         if (layoutItem == null)
                         {
                             goto TR_0006;
@@ -488,7 +485,7 @@ namespace Sitecore.Data.Fields
             }
             else if (!string.IsNullOrWhiteSpace(fieldValue))
             {
-                field.Value = XmlDeltas.GetDelta(value, fieldValue);
+                field.Value = Sitecore.Support.Data.Fields.XmlDeltas.GetDelta(value, fieldValue);
             }
             else
             {
@@ -508,8 +505,8 @@ namespace Sitecore.Data.Fields
             }
             else
             {
-                string delta = string.IsNullOrWhiteSpace(baseValue) ? value : XmlDeltas.GetDelta(value, baseValue);
-                if (!XmlUtil.XmlStringsAreEqual(XmlDeltas.ApplyDelta(baseValue, field.Value), XmlDeltas.ApplyDelta(baseValue, delta)))
+                string delta = string.IsNullOrWhiteSpace(baseValue) ? value : Sitecore.Support.Data.Fields.XmlDeltas.GetDelta(value, baseValue);
+                if (!XmlUtil.XmlStringsAreEqual(Sitecore.Support.Data.Fields.XmlDeltas.ApplyDelta(baseValue, field.Value), Sitecore.Support.Data.Fields.XmlDeltas.ApplyDelta(baseValue, delta)))
                 {
                     field.Value = delta;
                 }
@@ -523,7 +520,7 @@ namespace Sitecore.Data.Fields
             Assert.IsNotNull(list, "nodes");
             if (list.Count > 0)
             {
-                foreach (XmlNode node in list)
+                foreach (System.Xml.XmlNode node in list)
                 {
                     XmlUtil.SetAttribute("l", value, node);
                 }
@@ -554,7 +551,7 @@ namespace Sitecore.Data.Fields
                     {
                         if (!string.IsNullOrEmpty(definition2.ID))
                         {
-                            Item targetItem = base.InnerField.Database.GetItem(definition2.ID);
+                            Sitecore.Data.Items.Item targetItem = base.InnerField.Database.GetItem(definition2.ID);
                             if (targetItem != null)
                             {
                                 result.AddValidLink(targetItem, definition2.ID);
@@ -566,7 +563,7 @@ namespace Sitecore.Data.Fields
                         }
                         if (!string.IsNullOrEmpty(definition2.Layout))
                         {
-                            Item item = base.InnerField.Database.GetItem(definition2.Layout);
+                            Sitecore.Data.Items.Item item = base.InnerField.Database.GetItem(definition2.Layout);
                             if (item != null)
                             {
                                 result.AddValidLink(item, definition2.Layout);
@@ -583,7 +580,7 @@ namespace Sitecore.Data.Fields
                             {
                                 if (definition3.ItemID != null)
                                 {
-                                    Item item = base.InnerField.Database.GetItem(definition3.ItemID);
+                                    Sitecore.Data.Items.Item item = base.InnerField.Database.GetItem(definition3.ItemID);
                                     if (item != null)
                                     {
                                         result.AddValidLink(item, definition3.ItemID);
@@ -601,7 +598,7 @@ namespace Sitecore.Data.Fields
                                             CorePipeline.Run("resolveRenderingDatasource", args, false);
                                             datasource = args.Datasource;
                                         }
-                                        Item targetItem = base.InnerField.Database.GetItem(datasource);
+                                        Sitecore.Data.Items.Item targetItem = base.InnerField.Database.GetItem(datasource);
                                         if (targetItem != null)
                                         {
                                             result.AddValidLink(targetItem, datasource);
@@ -614,7 +611,7 @@ namespace Sitecore.Data.Fields
                                     string multiVariateTest = definition3.MultiVariateTest;
                                     if (!string.IsNullOrEmpty(multiVariateTest))
                                     {
-                                        Item targetItem = base.InnerField.Database.GetItem(multiVariateTest);
+                                        Sitecore.Data.Items.Item targetItem = base.InnerField.Database.GetItem(multiVariateTest);
                                         if (targetItem != null)
                                         {
                                             result.AddValidLink(targetItem, multiVariateTest);
@@ -627,7 +624,7 @@ namespace Sitecore.Data.Fields
                                     string personalizationTest = definition3.PersonalizationTest;
                                     if (!string.IsNullOrEmpty(personalizationTest))
                                     {
-                                        Item targetItem = base.InnerField.Database.GetItem(personalizationTest);
+                                        Sitecore.Data.Items.Item targetItem = base.InnerField.Database.GetItem(personalizationTest);
                                         if (targetItem != null)
                                         {
                                             result.AddValidLink(targetItem, personalizationTest);
@@ -671,7 +668,7 @@ namespace Sitecore.Data.Fields
                     }
                     if (!string.IsNullOrEmpty(definition.MetaDataItemId))
                     {
-                        Item targetItem = base.InnerField.Database.GetItem(definition.MetaDataItemId);
+                        Sitecore.Data.Items.Item targetItem = base.InnerField.Database.GetItem(definition.MetaDataItemId);
                         if (targetItem != null)
                         {
                             result.AddValidLink(targetItem, definition.MetaDataItemId);
@@ -683,9 +680,7 @@ namespace Sitecore.Data.Fields
             }
         }
 
-        // Properties
         public XmlDocument Data =>
             this.data;
-
     }
 }

@@ -1,21 +1,16 @@
-﻿using Sitecore;
-using Sitecore.Configuration;
+﻿using Sitecore.Configuration;
 using Sitecore.Data;
 using Sitecore.Data.Items;
 using Sitecore.Diagnostics;
 using Sitecore.Globalization;
 using Sitecore.Shell.Applications.Dialogs.LayoutDetails;
+using Sitecore.Shell.Framework.Commands;
 using Sitecore.Text;
 using Sitecore.Web;
 using Sitecore.Web.UI.Sheer;
-using System;
-using System.Collections.Generic;
 using System.Collections.Specialized;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace Sitecore.Shell.Framework.Commands
+namespace Sitecore.Support.Commands
 {
     public class SetLayoutDetails : Command
     {
@@ -80,7 +75,9 @@ namespace Sitecore.Shell.Framework.Commands
                     Item item = database.GetItem(ID.Parse(args.Parameters["id"]), Language.Parse(args.Parameters["language"]), Sitecore.Data.Version.Parse(args.Parameters["version"]));
                     Assert.IsNotNull(item, "item");
                     LayoutDetailsDialogResult result = LayoutDetailsDialogResult.Parse(args.Result);
-                    ItemUtil.SetLayoutDetails(item, result.Layout, result.FinalLayout);
+
+
+                    Sitecore.Support.Data.Items.ItemUtil.SetLayoutDetails(item, result.Layout, result.FinalLayout);
                     if (result.VersionCreated)
                     {
                         object[] objArray1 = new object[] { "item:versionadded(id=", item.ID, ",version=", item.Version, ",language=", item.Language, ")" };
