@@ -18,14 +18,17 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
-namespace Sitecore.Support.Data.Items
+namespace Sitecore.Data.Items
 {
     public sealed class ItemUtil
     {
+        // Fields
         private static readonly string DefaultItemName = "Unnamed item";
         private static readonly string[][] EncodedReplacements;
 
+        // Methods
         static ItemUtil()
         {
             string[] encodeNameReplacements = MainUtil.EncodeNameReplacements;
@@ -38,9 +41,9 @@ namespace Sitecore.Support.Data.Items
 
         public static Item AddFromTemplate(string itemName, string templateName, Item parent)
         {
-            Sitecore.Diagnostics.Error.AssertString(itemName, "itemName", false);
-            Sitecore.Diagnostics.Error.AssertString(templateName, "templateName", false);
-            Sitecore.Diagnostics.Error.AssertObject(parent, "parent");
+            Error.AssertString(itemName, "itemName", false);
+            Error.AssertString(templateName, "templateName", false);
+            Error.AssertObject(parent, "parent");
             TemplateItem template = parent.Database.Templates[templateName];
             return ((template == null) ? null : parent.Add(itemName, template));
         }
@@ -92,11 +95,11 @@ namespace Sitecore.Support.Data.Items
                         {
                             if (field.HasValue)
                             {
-                                Sitecore.Support.Data.Fields.LayoutField.SetFieldValue(field, CleanupLayoutValue(Sitecore.Support.Data.Fields.LayoutField.GetFieldValue(field)));
+                                LayoutField.SetFieldValue(field, CleanupLayoutValue(LayoutField.GetFieldValue(field)));
                             }
                             if (field2.HasValue)
                             {
-                                Sitecore.Support.Data.Fields.LayoutField.SetFieldValue(field2, CleanupLayoutValue(Sitecore.Support.Data.Fields.LayoutField.GetFieldValue(field2)));
+                                LayoutField.SetFieldValue(field2, CleanupLayoutValue(LayoutField.GetFieldValue(field2)));
                             }
                         }
                     }
@@ -208,8 +211,8 @@ namespace Sitecore.Support.Data.Items
 
         public static void DeleteItem(ID itemID, Database database)
         {
-            Sitecore.Diagnostics.Error.AssertObject(itemID, "itemID");
-            Sitecore.Diagnostics.Error.AssertObject(database, "database");
+            Error.AssertObject(itemID, "itemID");
+            Error.AssertObject(database, "database");
             Item item = database.Items[itemID];
             if (item != null)
             {
@@ -219,8 +222,8 @@ namespace Sitecore.Support.Data.Items
 
         public static void DeleteItem(string path, Database database)
         {
-            Sitecore.Diagnostics.Error.AssertString(path, "path", false);
-            Sitecore.Diagnostics.Error.AssertObject(database, "database");
+            Error.AssertString(path, "path", false);
+            Error.AssertObject(database, "database");
             Item item = database.Items[path];
             if (item != null)
             {
@@ -242,8 +245,8 @@ namespace Sitecore.Support.Data.Items
 
         public static string GetCopyOfName(Item destination, string name)
         {
-            Sitecore.Diagnostics.Error.AssertObject(destination, "dest");
-            Sitecore.Diagnostics.Error.AssertString(name, "name", false);
+            Error.AssertObject(destination, "dest");
+            Error.AssertString(name, "name", false);
             string itemName = name;
             if (destination.Axes.GetChild(itemName) != null)
             {
@@ -265,8 +268,7 @@ namespace Sitecore.Support.Data.Items
             {
                 if (partialPath.StartsWith(str2, StringComparison.InvariantCultureIgnoreCase))
                 {
-                    string text1 = "/sitecore/media library/" + StringUtil.Mid(partialPath, str2.Length);
-                    partialPath = text1;
+                    partialPath = "/sitecore/media library/" + StringUtil.Mid(partialPath, str2.Length);
                 }
             }
             string id = StringUtil.Right(partialPath, 0x20);
@@ -291,15 +293,15 @@ namespace Sitecore.Support.Data.Items
 
         public static ID GetItemID(string itemPath, Database database)
         {
-            Sitecore.Diagnostics.Error.AssertString(itemPath, "itemPath", false);
-            Sitecore.Diagnostics.Error.AssertObject(database, "database");
+            Error.AssertString(itemPath, "itemPath", false);
+            Error.AssertObject(database, "database");
             Item item = database.Items[itemPath];
             return ((item == null) ? ID.Null : item.ID);
         }
 
         public static string GetItemNameError(string name)
         {
-            Sitecore.Diagnostics.Error.AssertString(name, "name", true);
+            Error.AssertString(name, "name", true);
             if (name.Length == 0)
             {
                 return Translate.Text("An item name cannot be blank.");
@@ -393,13 +395,13 @@ namespace Sitecore.Support.Data.Items
 
         public static string GetParentName(Item item)
         {
-            Sitecore.Diagnostics.Error.AssertObject(item, "item");
+            Error.AssertObject(item, "item");
             return GetParentName(item, false);
         }
 
         public static string GetParentName(Item item, bool useDisplayName)
         {
-            Sitecore.Diagnostics.Error.AssertObject(item, "item");
+            Error.AssertObject(item, "item");
             Item parent = item.Parent;
             return ((parent == null) ? string.Empty : (!useDisplayName ? parent.Name : parent.DisplayName));
         }
@@ -430,7 +432,7 @@ namespace Sitecore.Support.Data.Items
 
         public static bool IsItemNameValid(string name)
         {
-            Sitecore.Diagnostics.Error.AssertString(name, "name", true);
+            Error.AssertString(name, "name", true);
             return (GetItemNameError(name).Length == 0);
         }
 
@@ -519,21 +521,19 @@ namespace Sitecore.Support.Data.Items
             Assert.ArgumentNotNull(sharedLayout, "sharedLayout");
             Assert.ArgumentNotNull(finalLayout, "finalLayout");
             string str = sharedLayout + finalLayout;
-            string text1 = CleanupLayoutValue(sharedLayout);
-            sharedLayout = text1;
-            string text2 = CleanupLayoutValue(finalLayout);
-            finalLayout = text2;
+            sharedLayout = CleanupLayoutValue(sharedLayout);
+            finalLayout = CleanupLayoutValue(finalLayout);
             using (new StatisticDisabler(StatisticDisablerState.ForItemsWithoutVersionOnly))
             {
                 item.Editing.BeginEdit();
                 Field field = item.Fields[FieldIDs.LayoutField];
-                if (!XmlUtil.XmlStringsAreEqual(CleanupLayoutValue(Sitecore.Support.Data.Fields.LayoutField.GetFieldValue(field)), sharedLayout))
+                if (!XmlUtil.XmlStringsAreEqual(CleanupLayoutValue(LayoutField.GetFieldValue(field)), sharedLayout))
                 {
-                    Sitecore.Support.Data.Fields.LayoutField.SetFieldValue(field, sharedLayout);
+                    LayoutField.SetFieldValue(field, sharedLayout);
                 }
                 if (!item.RuntimeSettings.TemporaryVersion)
                 {
-                    Sitecore.Support.Data.Fields.LayoutField.SetFieldValue(item.Fields[FieldIDs.FinalLayoutField], finalLayout, sharedLayout);
+                    LayoutField.SetFieldValue(item.Fields[FieldIDs.FinalLayoutField], finalLayout, sharedLayout);
                 }
                 item.Editing.EndEdit();
             }
@@ -544,6 +544,5 @@ namespace Sitecore.Support.Data.Items
             string[] parameters = new string[] { AuditFormatter.FormatItem(item), str };
             Log.Audit(typeof(ItemUtil), "Set layout details: {0}, layout: {1}", parameters);
         }
-
     }
 }

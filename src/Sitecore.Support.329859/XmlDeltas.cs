@@ -3,9 +3,13 @@ using Sitecore.Diagnostics;
 using Sitecore.Xml;
 using Sitecore.Xml.Patch;
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 using System.Xml;
 
-namespace Sitecore.Support.Data.Fields
+namespace Sitecore.Data.Fields
 {
     public static class XmlDeltas
     {
@@ -18,13 +22,13 @@ namespace Sitecore.Support.Data.Fields
             }
             XmlDocument document = XmlUtil.LoadXml(delta);
             Assert.IsNotNull(document, "Layout Delta is not a valid XML");
-            System.Xml.XmlNode documentElement = document.DocumentElement;
+            XmlNode documentElement = document.DocumentElement;
             Assert.IsNotNull(documentElement, "Xml document root element is missing (delta)");
             XmlDocument document2 = XmlUtil.LoadXml(baseValue);
             Assert.IsNotNull(document2, "Layout Value is not a valid XML");
-            System.Xml.XmlNode node2 = document2.DocumentElement;
+            XmlNode node2 = document2.DocumentElement;
             Assert.IsNotNull(node2, "Xml document root element is missing (base)");
-            new Sitecore.Support.Xml.Patch.XmlPatcher("s", "p").Merge(node2, documentElement);
+            new XmlPatcher("s", "p").Merge(node2, documentElement);
             return node2.OuterXml;
         }
 

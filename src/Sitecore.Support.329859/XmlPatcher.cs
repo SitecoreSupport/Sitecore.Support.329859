@@ -1,8 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 using System.Xml;
-using Sitecore.Xml.Patch;
 
-namespace Sitecore.Support.Xml.Patch
+namespace Sitecore.Xml.Patch
 {
     public class XmlPatcher
     {
@@ -26,17 +29,17 @@ namespace Sitecore.Support.Xml.Patch
             namespaces1.PatchNamespace = patchNamespace;
         }
 
-        public void Merge(System.Xml.XmlNode target, IXmlElement patch)
+        public void Merge(XmlNode target, IXmlElement patch)
         {
             this.XmlHelper.MergeNodes(target, patch, this.ns);
         }
 
-        public void Merge(System.Xml.XmlNode target, System.Xml.XmlNode patch)
+        public void Merge(XmlNode target, XmlNode patch)
         {
             this.XmlHelper.MergeNodes(target, new XmlDomSource(patch), this.ns);
         }
 
-        public void Merge(System.Xml.XmlNode target, XmlReader reader)
+        public void Merge(XmlNode target, XmlReader reader)
         {
             this.XmlHelper.MergeNodes(target, new XmlReaderSource(reader), this.ns);
         }
